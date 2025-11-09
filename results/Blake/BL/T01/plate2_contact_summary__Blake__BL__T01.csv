@@ -1,0 +1,2 @@
+participant,condition,trial,plate,contact_index,start_time_s,end_time_s,contact_time_s,stride_time_s,stance_pct_of_stride,swing_pct_of_stride,peak_Fz_N,mean_Fz_N,vertical_impulse_Ns,cop_AP_excursion_m,cop_ML_excursion_m,cop_path_length_m,cop_mean_speed_mps
+Blake,BL,T01,2,1,6.46,7.42,0.96,,,,1050.8142053765087,804.7968009912671,769.9116855360223,0.2548629,0.048717800000000006,0.3070989754322299,0.31989476607523953
