@@ -28,9 +28,9 @@ from scipy.signal import butter, filtfilt
 
 # ===== USER SETTINGS =====
 participant_id  = "Blake"   # e.g., "Blake01"
-trial_condition = "BL"      # e.g., "Shoes", "Barefoot", "Fast"
+trial_condition = "LS"      # e.g., "Shoes", "Barefoot", "Fast"
 trial_id        = "T01"     # e.g., "BL_01", "Run_02"
-file_path = "/Users/evanquan/Downloads/Blake/FullPilotBlake_BL/FullPilotBlake_BL_forces_2025_01_17_120728.csv"
+file_path = "/Users/evanquan/Downloads/Blake/FullPilotBlake_LS/FullPilotBlake_LS_forces_2025_01_17_121458.csv"
 
 fs = 50                 # Hz
 filter_cutoff = 10      # Hz low-pass (good for 50 Hz force/COP at 50 Hz sampling)
@@ -351,21 +351,53 @@ if save_plots:
     plt.savefig(outname("plate2_Fz_plot", "png"), dpi=150); plt.close()
     print(f"🖼  Saved → {outname('plate2_Fz_plot','png')}")
 
-# ---- COP plots (Plate 2, AP/ML) ----
-# 1) Trajectory AP vs ML with stance highlighting
-mask = ~(np.isnan(cop_ap2) | np.isnan(cop_ml2))
-cop_ap2_plot = cop_ap2[mask]; cop_ml2_plot = cop_ml2[mask]
-plt.figure(figsize=(6, 6))
-plt.plot(cop_ap2_plot, cop_ml2_plot, linewidth=1.0)
+# ---- COP trajectory plot (Plate 2, stance-only) ----
+SWAP_COP_AXES = True  # set False to keep AP on x and ML on y
+
+if SWAP_COP_AXES:
+    cop_x_series = cop_ml2
+    cop_y_series = cop_ap2
+    x_label = "COP ML (m)"
+    y_label = "COP AP (m)"
+else:
+    cop_x_series = cop_ap2
+    cop_y_series = cop_ml2
+    x_label = "COP AP (m)"
+    y_label = "COP ML (m)"
+
+# mask to show only stance frames
+mask = np.zeros_like(cop_x_series, dtype=bool)
 for s, e in contacts2:
-    plt.plot(cop_ap2[s:e], cop_ml2[s:e], linewidth=2.0)
-plt.gca().set_aspect('equal', adjustable='box')
-plt.xlabel("COP AP (m)")
-plt.ylabel("COP ML (m)")
-plt.title("Plate 2 COP Trajectory (AP vs ML)")
-plt.grid(True); plt.tight_layout()
-plt.savefig(outname("plate2_COP_trajectory_APML", "png"), dpi=150); plt.close()
-print(f"🖼  Saved → {outname('plate2_COP_trajectory_APML','png')}")
+    mask[s:e] = True
+cop_x_plot = np.where(mask, cop_x_series, np.nan)
+cop_y_plot = np.where(mask, cop_y_series, np.nan)
+
+plt.figure(figsize=(6, 6))
+plt.plot(cop_x_plot, cop_y_plot, linewidth=2.0, color="black")
+for i, (s, e) in enumerate(contacts2, start=1):
+    plt.plot(cop_x_series[s:e], cop_y_series[s:e], linewidth=3.0, label=f"Stance {i}")
+
+plt.gca().set_aspect("equal", adjustable="box")
+
+# --- NEW: lock axis range to be equal across trials ---
+all_x = cop_x_plot[np.isfinite(cop_x_plot)]
+all_y = cop_y_plot[np.isfinite(cop_y_plot)]
+if all_x.size and all_y.size:
+    span = max(np.ptp(all_x), np.ptp(all_y)) / 2
+    mid_x, mid_y = np.nanmean(all_x), np.nanmean(all_y)
+    plt.xlim(mid_x - span, mid_x + span)
+    plt.ylim(mid_y - span, mid_y + span)
+
+plt.xlabel(x_label)
+plt.ylabel(y_label)
+plt.title("Plate 2 COP Trajectory (stance-only, equal axes)")
+plt.grid(True)
+plt.legend()
+plt.tight_layout()
+
+plt.savefig(outname("plate2_COP_trajectory_equalaxes", "png"), dpi=150)
+plt.close()
+print("🖼  Saved →", outname("plate2_COP_trajectory_equalaxes", "png"))
 
 # ---------- General per-plate summary (plates 1 & 2), optional keep ----------
 plates = [1, 2]
